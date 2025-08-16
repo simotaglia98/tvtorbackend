@@ -3,22 +3,36 @@
  * Contains settings specific to the production environment
  * Used when NODE_ENV=production for live deployment
  * 
- * Note: This configuration should be updated with actual production values
- * and should use environment variables for sensitive information
+ * SECURITY: All values must be provided via environment variables
+ * Application will fail to start if any required environment variable is missing
  */
+
+// Check for required environment variables and fail fast if missing
+const requiredEnvVars = ['MONGODB_URI', 'JWT_SECRET', 'EMAIL', 'PASSWORD'];
+const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingVars.length > 0) {
+    console.error('❌ PRODUCTION CONFIG ERROR: Missing required environment variables:');
+    missingVars.forEach(varName => console.error(`   - ${varName}`));
+    console.error('Application cannot start without these environment variables.');
+    process.exit(1);
+}
 
 module.exports = {
     // MongoDB connection string for production environment
-    // Currently set to localhost - should be updated to production MongoDB instance
-    // Consider using MongoDB Atlas or other cloud MongoDB service for production
-    MONGODB_URI: "mongodb://localhost:27017/tutor",
+    // Must be provided via MONGODB_URI environment variable
+    MONGODB_URI: process.env.MONGODB_URI,
     
     // JWT secret key for production environment
-    // WARNING: This should be a strong, unique secret key in production
-    // Consider using environment variables for security
-    JWT_SECRET: 'EEEASDFASDFASDFASDF',
+    // Must be provided via JWT_SECRET environment variable
+    JWT_SECRET: process.env.JWT_SECRET,
     
     // Base API URL for production environment
-    // Should be updated to actual production domain
-    API_URL: "http://localhost:5000"
+    // Will be set automatically by Render or provided via API_URL env var
+    API_URL: process.env.API_URL,
+    
+    // Email credentials for production
+    // Must be provided via environment variables
+    EMAIL: process.env.EMAIL,
+    PASSWORD: process.env.PASSWORD
 };

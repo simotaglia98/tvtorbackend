@@ -12,9 +12,9 @@ const createLocations = async function (req, res) {
       return utilServices.errorResponse(res, constants.LOCATION_ALREADY_EXIST, 409);
     }
     const data = await locationService.insertLocation(req.body);
-    return utilServices.successResponse(res, constants.CREATE_LOCATION, 200, data);
+    return utilServices.successResponse(res, constants.CREATE_LOCATION, 201, data);
   } catch (error) {
-    return utilServices.successResponse(res, constants.DB_ERROR, 500);
+    return utilServices.errorResponse(res, constants.DB_ERROR, 500);
   }
 }
 
@@ -39,7 +39,7 @@ const getAllLocations = async function (req, res) {
     const data = await locationService.getLocationList(search, sort, order, perpage, skip);
     return utilServices.successResponse(res, constants.DATA_FOUND, 200, { data: data, total: total });
   } catch (error) {
-    return utilServices.successResponse(res, constants.DB_ERROR, 500);
+    return utilServices.errorResponse(res, constants.DB_ERROR, 500);
   }
 }
 
@@ -56,7 +56,7 @@ const updateLocations = async function (req, res) {
     const data = await locationService.locationUpdate(updateData)
     return utilServices.successResponse(res, constants.UPDATE_DATA, 200, data);
   } catch (error) {
-    return utilServices.successResponse(res, constants.DB_ERROR, 500);
+    return utilServices.errorResponse(res, constants.DB_ERROR, 500);
   }
 }
 
@@ -69,7 +69,7 @@ const deleteLocations = async function (req, res) {
     }
     return utilServices.successResponse(res, constants.DATA_DELETE, 200);
   } catch (error) {
-    return utilServices.successResponse(res, constants.DB_ERROR, 500);
+    return utilServices.errorResponse(res, constants.DB_ERROR, 500);
   }
 }
 
@@ -83,7 +83,7 @@ const getSingleLocation = async function (req, res) {
     }
     return utilServices.successResponse(res, constants.DATA_FOUND, 200, data);
   } catch (error) {
-    return utilServices.successResponse(res, constants.DB_ERROR, 500);
+    return utilServices.errorResponse(res, constants.DB_ERROR, 500);
   }
 }
 
@@ -93,16 +93,16 @@ const getTutorsLocation = async function (req, res) {
     const locations = location.split(',');
     const locationIds = await locationService.getLocationIds(locations);
     if(locationIds.length == 0){
-      return utilServices.successResponse(res, constants.DATA_FOUND, 404);
+      return utilServices.errorResponse(res, constants.DATA_NOT_FOUND, 404);
     }
     let tutor = await locationService.getLocationOfTutors(locationIds);
     if(tutor && tutor.length>0){
       return utilServices.successResponse(res, constants.DATA_FOUND, 200);
     } else {
-      return utilServices.successResponse(res, constants.DATA_NOT_FOUND, 404);
+      return utilServices.errorResponse(res, constants.DATA_NOT_FOUND, 404);
     }
   } catch (error) {
-    return utilServices.successResponse(res, constants.DB_ERROR, 500);
+    return utilServices.errorResponse(res, constants.DB_ERROR, 500);
   }
 }
 

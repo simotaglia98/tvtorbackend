@@ -18,7 +18,7 @@ var bcrypt = require('bcryptjs');
 let login = async (req, res) => {
   try {
     if (!req.body.email || !req.body.password) {
-      return utilServices.errorResponse(res, constants.PARAMETER_MISSING, 401);
+      return utilServices.errorResponse(res, constants.PARAMETER_MISSING, 400);
     }
     const checkEmail = await userService.validEmail(req.body.email);
     if (!checkEmail) {
@@ -50,7 +50,7 @@ let login = async (req, res) => {
       let email = req.body.email
       const loginStatus = true;
       await userService.statusForLogin(email, loginStatus);
-      return utilServices.successResponse(res, constants.LOGIN_SUCCESS, 201, responseData);
+      return utilServices.successResponse(res, constants.LOGIN_SUCCESS, 200, responseData);
     }
   } catch (err) {
     return utilServices.errorResponse(res, constants.DB_ERROR, 400);
@@ -104,7 +104,7 @@ const register = async (req, res) => {
           const secretToken = await authHelper.generateJWToken(data);
           res.header('access-token', secretToken);
           const responseData = response(data, secretToken);
-          return utilServices.successResponse(res, constants.TUTOR_CREATE, 200, responseData);
+          return utilServices.successResponse(res, constants.TUTOR_CREATE, 201, responseData);
         }
       } else {
         const password = authHelper.bcryptPassword(req.body.password);
@@ -121,7 +121,7 @@ const register = async (req, res) => {
           const secretToken = await authHelper.generateJWToken(data);
           res.header('access-token', secretToken);
           const responseData = response(data, secretToken);
-          return utilServices.successResponse(res, constants.TUTOR_CREATE, 200, responseData);
+          return utilServices.successResponse(res, constants.TUTOR_CREATE, 201, responseData);
         }
       }
     }
@@ -141,7 +141,7 @@ const forgotPassword = async (req, res) => {
           return utilServices.errorResponse(res, "Email not found", 401);
         } else {
           mailer.sendForgotPasswordLink(req.body.email, data._id);
-          return utilServices.successResponse(res, "Please check your email to reset password.", 201);
+          return utilServices.successResponse(res, "Please check your email to reset password.", 200);
         }
       }
     });
@@ -153,28 +153,47 @@ const forgotPassword = async (req, res) => {
 
 const resetPassword = async (req, res) => {
   try {
-    const getUser = await User.findOne({ _id: req.params._id });
-    let encryptedPassword = await bcrypt.compare(req.body.oldPassword, getUser.password);
-    if (encryptedPassword) {
-      let passwordToUpadate = {
-        password: User.hashPassword(req.body.resetPassword)
-      }
-      await User.findByIdAndUpdate({ _id: req.params._id }, passwordToUpadate, (err, updatedPassword) => {
-        if (err) {
-          return utilServices.errorResponse(res, "Something went wrong", 401);
-        } else {
-          if (!updatedPassword) {
-            return utilServices.errorResponse(res, "Data not found", 401);
-          } else {
-            return utilServices.successResponse(res, "Password successfully reset.", 201);
-          }
-        }
-      });
-    } else {
-      return utilServices.errorResponse(res, "Password not matched", 401);
+    // Validate required fields
+    if (!req.body.oldPassword || !req.body.resetPassword) {
+      return utilServices.errorResponse(res, "Old password and new password are required", 400);
     }
+
+    // Validate password strength (minimum 6 characters)
+    if (req.body.resetPassword.length < 6) {
+      return utilServices.errorResponse(res, "New password must be at least 6 characters long", 400);
+    }
+
+    // Find user
+    const getUser = await User.findOne({ _id: req.params.id });
+    if (!getUser) {
+      return utilServices.errorResponse(res, "User not found", 404);
+    }
+
+    // Verify old password
+    const isOldPasswordValid = await bcrypt.compare(req.body.oldPassword, getUser.password);
+    if (!isOldPasswordValid) {
+      return utilServices.errorResponse(res, "Current password is incorrect", 401);
+    }
+
+    // Update password using async/await
+    const passwordToUpdate = {
+      password: User.hashPassword(req.body.resetPassword)
+    };
+    
+    const updatedUser = await User.findByIdAndUpdate(
+      { _id: req.params.id }, 
+      passwordToUpdate, 
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return utilServices.errorResponse(res, "Failed to update password", 500);
+    }
+
+    return utilServices.successResponse(res, "Password successfully reset.", 200);
   } catch (err) {
-    return utilServices.errorResponse(res, "Something went wrong", 401);
+    console.error('Reset password error:', err);
+    return utilServices.errorResponse(res, "Something went wrong", 500);
   }
 }
 
@@ -191,7 +210,7 @@ const updatePassword = async (req, res) => {
             if (err) {
               return utilServices.errorResponse(res, "Something went wrong", 401);
             } else {
-              return utilServices.successResponse(res, "Password successfully updated.", 201);
+              return utilServices.successResponse(res, "Password successfully updated.", 200);
             }
           })
         } else {
@@ -325,7 +344,7 @@ const updateUser = async function (req, res) {
       return utilServices.successResponse(res, constants.UPDATE_DATA, 200, data1);
     }
   } catch (error) {
-    return utilServices.successResponse(res, constants.DB_ERROR, 500);
+    return utilServices.errorResponse(res, constants.DB_ERROR, 500);
   }
 }
 
@@ -338,7 +357,7 @@ const deleteUser = async function (req, res) {
     }
     return utilServices.successResponse(res, constants.DATA_DELETE, 200);
   } catch (error) {
-    return utilServices.successResponse(res, constants.DB_ERROR, 500);
+    return utilServices.errorResponse(res, constants.DB_ERROR, 500);
   }
 }
 
@@ -369,7 +388,7 @@ const getAllTM = async function (req, res) {
     const data = await userService.getTutorManagersList(search, sort, order, perpage, skip);
     return utilServices.successResponse(res, constants.DATA_FOUND, 200, { data: data, total: total });
   } catch (error) {
-    return utilServices.successResponse(res, constants.DB_ERROR, 500);
+    return utilServices.errorResponse(res, constants.DB_ERROR, 500);
   }
 }
 
@@ -400,7 +419,7 @@ const getAllTManager = async function (req, res) {
     }
     return utilServices.successResponse(res, constants.DATA_FOUND, 200, { data: data, total: total });
   } catch (error) {
-    return utilServices.successResponse(res, constants.DB_ERROR, 500);
+    return utilServices.errorResponse(res, constants.DB_ERROR, 500);
   }
 }
 
@@ -438,7 +457,7 @@ const changeUserStatus = async function (req, res) {
     await userService.acceptTutorManagers(userId, statuschange)
     return utilServices.successResponse(res, constants.ACCEPT_TM, 200);
   } catch (error) {
-    return utilServices.successResponse(res, constants.DB_ERROR, 500);
+    return utilServices.errorResponse(res, constants.DB_ERROR, 500);
   }
 }
 
@@ -449,7 +468,7 @@ const changeUserDelete = async function (req, res) {
     await userService.declineTutorManagers(userId, statuschange)
     return utilServices.successResponse(res, constants.DECLINE_TM, 200);
   } catch (error) {
-    return utilServices.successResponse(res, constants.DB_ERROR, 500);
+    return utilServices.errorResponse(res, constants.DB_ERROR, 500);
   }
 }
 
@@ -492,7 +511,7 @@ const getAllTutorsOfManager = async function (req, res) {
     return utilServices.successResponse(res, constants.DATA_FOUND, 200, { data: data, total: total });
   }
   catch (error) {
-    return utilServices.successResponse(res, constants.DB_ERROR, 500);
+    return utilServices.errorResponse(res, constants.DB_ERROR, 500);
   }
 }
 
@@ -506,7 +525,7 @@ const deleteTMandTutors = async function (req, res) {
     }
     return utilServices.successResponse(res, constants.DATA_DELETE, 200);
   } catch (error) {
-    return utilServices.successResponse(res, constants.DB_ERROR, 500);
+    return utilServices.errorResponse(res, constants.DB_ERROR, 500);
   }
 }
 

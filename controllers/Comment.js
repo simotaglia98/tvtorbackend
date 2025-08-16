@@ -9,7 +9,7 @@ const createComment = async function (req, res) {
     const checkComment = await commentServices.getComment(tutorId, managerId);
     if (!checkComment) {
       const data = await commentServices.insertComment(req.body);
-      return utilServices.successResponse(res, constants.CREATE_COMMENTS, 200, data);
+      return utilServices.successResponse(res, constants.CREATE_COMMENTS, 201, data);
     } else {
       const checkComment = await commentServices.getComment(tutorId, managerId);
       const updateData = await commentServices.getCommentById(checkComment._id)
@@ -20,16 +20,16 @@ const createComment = async function (req, res) {
       return utilServices.successResponse(res, constants.UPDATE_DATA, 200, data);
     }
   } catch (error) {
-    return utilServices.successResponse(res, constants.DB_ERROR, 500);
+    return utilServices.errorResponse(res, constants.DB_ERROR, 500);
   }
 }
 
 const getComments = async function (req, res) {
   try {
     const data = await commentServices.getComments(req.body);
-    return utilServices.successResponse(res, constants.CREATE_COMMENTS, 200, data);
+    return utilServices.successResponse(res, constants.DATA_FOUND, 200, data);
   } catch (error) {
-    return utilServices.successResponse(res, constants.DB_ERROR, 500);
+    return utilServices.errorResponse(res, constants.DB_ERROR, 500);
   }
 }
 

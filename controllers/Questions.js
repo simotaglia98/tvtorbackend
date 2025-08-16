@@ -13,7 +13,7 @@ const mailer = require('../helper/mail');
 const createQuestion = async (req, res) => {
     try {
         const data = await questionService.insertQuestions(req.body);
-        return utilServices.successResponse(res, constants.CREATE_QUESTIONS, 200, data);
+        return utilServices.successResponse(res, constants.CREATE_QUESTIONS, 201, data);
     } catch (error) {
         return utilServices.errorResponse(res, constants.DB_ERROR, 500);
     }

@@ -23,11 +23,28 @@ mongoose.Promise = Promise;
 // Database connection configuration
 // Connect to MongoDB using the URI from config
 const mongoUri = config.mongoUri;
-mongoose.connect(mongoUri, { server: { socketOptions: { keepAlive: 1 } } });
+mongoose.connect(mongoUri, { 
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
+    socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+}).then(() => {
+    console.log('✅ Connected to MongoDB successfully');
+}).catch((error) => {
+    console.error('❌ MongoDB connection failed:', error.message);
+    console.error('Database URI:', mongoUri.replace(/\/\/.*:.*@/, '//***:***@')); // Hide credentials
+    process.exit(1); // Exit process to avoid hanging
+});
 
-// Handle database connection errors
-mongoose.connection.on('error', () => {
-    throw new Error(`unable to connect to database: ${mongoUri}`);
+// Handle database connection errors after initial connection
+mongoose.connection.on('error', (error) => {
+    console.error('❌ MongoDB connection error:', error.message);
+    process.exit(1); // Exit process to avoid hanging
+});
+
+// Handle database disconnection
+mongoose.connection.on('disconnected', () => {
+    console.warn('⚠️  MongoDB disconnected');
 });
 
 // Enable Mongoose debug logging in development environment

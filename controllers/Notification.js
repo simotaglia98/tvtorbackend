@@ -5,9 +5,9 @@ const { constants } = require(`${appRoot}/lib/constants`);
 const createNotification = async function (req, res) {
     try {
         const data = await notificationService.insertNotification(req.body);
-        return utilServices.successResponse(res, constants.CREATE_NOTIFICATION, 200, data);
+        return utilServices.successResponse(res, constants.CREATE_NOTIFICATION, 201, data);
     } catch (error) {
-        return utilServices.successResponse(res, constants.DB_ERROR, 500);
+        return utilServices.errorResponse(res, constants.DB_ERROR, 500);
     }
 }
 

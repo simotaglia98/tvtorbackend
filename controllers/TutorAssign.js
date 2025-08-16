@@ -95,7 +95,7 @@ const getStudentTutor = async (req, res) => {
         }
         return utilServices.successResponse(res, constants.DATA_FOUND, 200, data);
     } catch (error) {
-        return utilServices.successResponse(res, constants.DB_ERROR, 500);
+        return utilServices.errorResponse(res, constants.DB_ERROR, 500);
     }
 }
 
@@ -111,7 +111,7 @@ const checkTutorAssignOrNot = async (req, res) => {
         var data = await TutorAssign.findOne({ email: emailId, createdAt: { $gt: now } })
         return utilServices.successResponse(res, constants.DATA_FOUND, 200, data);
     } catch (error) {
-        return utilServices.successResponse(res, constants.DB_ERROR, 500);
+        return utilServices.errorResponse(res, constants.DB_ERROR, 500);
     }
 }
 
@@ -135,7 +135,7 @@ const getAssignTutor = async (req, res) => {
         return utilServices.successResponse(res, constants.DATA_FOUND, 200, data);
 
     } catch (error) {
-        return utilServices.successResponse(res, constants.DB_ERROR, 500);
+        return utilServices.errorResponse(res, constants.DB_ERROR, 500);
     }
 }
 

@@ -19,7 +19,12 @@ const verifyToken = async(req, res, next)=>{
                             return utilServices.errorResponse(res, "Unauthorized", 401); 
                            } else {
                                if(result){
-                                   next();
+                                   // Set user context for downstream handlers
+                                   req.user = decoded;
+                                   req.userId = decoded._id;
+                                   return next();
+                               } else {
+                                   return utilServices.errorResponse(res, "Unauthorized", 401);
                                }
                            }
                        })
